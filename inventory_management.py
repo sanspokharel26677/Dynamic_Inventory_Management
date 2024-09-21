@@ -226,22 +226,25 @@ def add_product_with_heap(product_id, name, category, price, quantity):
 def update_product_with_heap(product_id, name=None, category=None, price=None, quantity=None):
     """
     Updates a product in the inventory and manages the heap and AVL tree for price changes.
+    If the product_id does not exist, it returns an error.
     """
-    if product_id in inventory:
-        current_price = inventory[product_id]['price']  # Get current price
-        remove_product_from_heap(product_id, current_price)  # Remove old price from heap
-        # Update product details
-        if name:
-            inventory[product_id]['name'] = name
-        if category:
-            inventory[product_id]['category'] = category
-        if price is not None:
-            inventory[product_id]['price'] = price
-        if quantity is not None:
-            inventory[product_id]['quantity'] = quantity
-        # Add updated product to heap and AVL tree
-        if price is not None:
-            add_product_to_heap(product_id, price)
+    if product_id not in inventory:
+        print(f"Error: Product with ID {product_id} does not exist.")
+        return
+
+    current_price = inventory[product_id]['price']
+    remove_product_from_heap(product_id, current_price)
+    if name:
+        inventory[product_id]['name'] = name
+    if category:
+        inventory[product_id]['category'] = category
+    if price is not None:
+        inventory[product_id]['price'] = price
+    if quantity is not None:
+        inventory[product_id]['quantity'] = quantity
+    if price is not None:
+        add_product_to_heap(product_id, price)
+    print(f"Product {product_id} updated successfully!")
 
 def delete_product_with_heap(product_id):
     """
