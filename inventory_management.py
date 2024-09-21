@@ -214,7 +214,11 @@ def remove_product_from_heap(product_id, price):
 def add_product_with_heap(product_id, name, category, price, quantity):
     """
     Adds a product to the inventory and inserts the price into the min-heap and AVL tree.
+    Also checks if the product id already exist. If it does, it won't add.
     """
+    if product_id in inventory:
+      print(f"Error: Product with ID {product_id} already exists.")
+      return
     product = {'id': product_id, 'name': name, 'category': category, 'price': price, 'quantity': quantity}
     inventory[product_id] = product  # Add product to the inventory (hash table)
     add_product_to_heap(product_id, price)  # Add product to the heap (min-heap for price tracking)
