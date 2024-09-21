@@ -1,3 +1,48 @@
+"""
+Dynamic Inventory Management System
+
+This program implements a dynamic inventory management system using Python. 
+It allows users to perform the following operations through a command-line interface (CLI):
+1. Add a new product to the inventory.
+2. Update an existing product's details such as name, category, price, and quantity.
+3. Delete a product from the inventory.
+4. Retrieve the product with the lowest price from the inventory.
+5. Display all products currently in the inventory.
+6. Query products within a specified price range using an AVL Tree.
+
+Key Features:
+- **Hash Table (Python Dictionary)**: 
+  Used to store product information. Each product has a unique product ID, name, category, price, and quantity.
+  
+- **Min-Heap (using heapq module)**:
+  Used to efficiently retrieve the product with the lowest price. 
+  Products are stored in the heap based on their prices, allowing O(1) access to the lowest price.
+
+- **AVL Tree**:
+  A balanced binary search tree used to index products by their prices.
+  It enables efficient queries for retrieving products that fall within a specified price range.
+
+- **CLI Interface**:
+  A menu-driven interface that allows users to interact with the system by entering options to perform the desired operations.
+
+- **Error Handling**:
+  The program includes robust error handling to:
+  1. Validate user inputs (e.g., ensure correct data types).
+  2. Handle cases where products with non-existing IDs are updated or deleted.
+  3. Prevent duplicate product IDs from being added.
+  4. Gracefully manage empty inventories.
+
+- **Dummy Data Initialization**:
+  When the program starts, a set of predefined dummy products are added to the inventory for demonstration purposes.
+
+Usage:
+- The program starts by initializing some dummy products and then enters a CLI loop where the user can interact with the system by choosing options from the menu.
+- Each operation is accompanied by user prompts to input necessary data, and results are displayed back to the user in a clear format.
+
+This implementation provides an efficient, scalable, and interactive solution for managing a dynamic inventory of products.
+"""
+
+
 import heapq  # Import for heap functionality
 
 # Hash Table for Product Storage (using Python dictionary)
@@ -169,7 +214,11 @@ def remove_product_from_heap(product_id, price):
 def add_product_with_heap(product_id, name, category, price, quantity):
     """
     Adds a product to the inventory and inserts the price into the min-heap and AVL tree.
+    Also checks if the product id already exist. If it does, it won't add.
     """
+    if product_id in inventory:
+      print(f"Error: Product with ID {product_id} already exists.")
+      return
     product = {'id': product_id, 'name': name, 'category': category, 'price': price, 'quantity': quantity}
     inventory[product_id] = product  # Add product to the inventory (hash table)
     add_product_to_heap(product_id, price)  # Add product to the heap (min-heap for price tracking)
