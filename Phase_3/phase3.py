@@ -44,7 +44,8 @@ This implementation provides an efficient, scalable, and interactive solution fo
 
 from utils import time_it
 from utils import memory_it
-from utils import measure_execution_time, plot_execution_times
+from utils import measure_execution_time, plot_execution_times, plot_memory_usage
+import time
 
 import heapq  # Import for heap functionality
 
@@ -249,7 +250,7 @@ def add_product_without_timing(product_id, name, category, price, quantity):
     avl_root = avl_tree.insert(avl_root, price, product)
 
 
-
+@time_it("time taken to update prouct: ")
 def update_product_with_heap(product_id, name=None, category=None, price=None, quantity=None):
     """
     Updates a product in the inventory and manages the heap and AVL tree for price changes.
@@ -273,6 +274,7 @@ def update_product_with_heap(product_id, name=None, category=None, price=None, q
         add_product_to_heap(product_id, price)
     print(f"Product {product_id} updated successfully!")
 
+@time_it("time taken to delete this product")
 def delete_product_with_heap(product_id):
     """
     Deletes a product from the inventory and removes it from both the heap and AVL tree.
@@ -324,7 +326,7 @@ def initialize_dummy_products():
 product_counter = 1
 
 @time_it("Time taken to initialize products") 
-@memory_it("Memory taken to initialize produts")
+@memory_it("Memory taken to initialize produts", collect_data=True)
 def initialize_large_dummy_products(num_products):
     """
     Initializes the inventory with a large number of dummy products for stress testing.
@@ -343,12 +345,14 @@ def initialize_large_dummy_products(num_products):
         quantity = product_id % 100 + 1  # Random quantity between 1 and 100
 
         # Add product to inventory, heap, and AVL tree without timing
-        add_product_with_heap(product_id, name, category, price, quantity)
+        add_product_without_timing(product_id, name, category, price, quantity)
 
         # Increment the global counter after each product is added
         product_counter += 1
 
     print(f"Initialized {num_products} products successfully!")
+    
+
 
 
 
@@ -431,18 +435,40 @@ def run_inventory_management():
             print("Invalid choice! Please select a valid option.")
 
 if __name__ == "__main__":
-    # Step 1: Manual initialization of specific sets of products (from Code A)
-    initialize_large_dummy_products(100)  # Initializes 100 products
-    #initialize_large_dummy_products(200)  # Initializes 200 more products
+    # Step 1: Initialize some small dummy products for basic setup (no timing)
+    #initialize_dummy_products()
 
-    # Step 2: Now measure execution time for larger datasets (from Code B)
-    input_sizes = [10000, 50000, 100000, 500000]  # Larger input sizes for performance testing
-    execution_times = measure_execution_time(initialize_large_dummy_products, input_sizes)
+    # Step 2: Define input sizes for stress testing
+    input_sizes = [10000, 50000, 100000, 500000]
 
-    # Step 3: Plot and save the graph for execution times
+    # Step 3: Initialize lists to store execution times and memory usages
+    execution_times = []
+    memory_usages = []
+
+    # Step 4: Measure both time and memory usage for each input size
+    for size in input_sizes:
+        # Time measurement
+        start_time = time.time()
+
+        # Memory measurement using the `memory_it` decorator
+        memory_used = initialize_large_dummy_products(size)  # Collect memory usage via the modified decorator
+
+        end_time = time.time()
+        time_taken = end_time - start_time
+
+        # Append both time and memory usage results
+        execution_times.append(time_taken)
+        memory_usages.append(memory_used)
+
+        # Print results to the console
+        print(f"Input size {size}: Time taken = {time_taken:.6f} seconds, Memory used = {memory_used:.6f} MiB")
+
+    # Step 5: Plot and save the graph for execution times
     plot_execution_times(input_sizes, execution_times, "initialize_large_dummy_products")
 
-    # Step 4: Start the inventory management system (CLI)
-    run_inventory_management()
+    # Step 6: Plot and save the graph for memory usage
+    plot_memory_usage(input_sizes, memory_usages, "initialize_large_dummy_products")
 
+    # Step 7: Start the inventory management system (CLI)
+    run_inventory_management()
 
