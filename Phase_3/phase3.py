@@ -188,12 +188,14 @@ avl_root = None  # Start with an empty AVL tree
 # Min-Heap to track product prices
 price_heap = []
 
+
 def add_product_to_heap(product_id, price):
     """
     Adds a product's price and its ID to the heap for quick retrieval of the product with the lowest price.
     """
     heapq.heappush(price_heap, (price, product_id))  # Push a tuple of (price, product_id) into the heap
 
+@time_it("Time time to get product with lowest price:  ")
 def get_lowest_price_product():
     """
     Retrieves the product with the lowest price from the heap.
@@ -353,9 +355,6 @@ def initialize_large_dummy_products(num_products):
     print(f"Initialized {num_products} products successfully!")
     
 
-
-
-
 def run_inventory_management():
     """
     Runs the inventory management system with a command-line interface (CLI).
@@ -371,9 +370,14 @@ def run_inventory_management():
                 category = input("Enter product category: ")
                 price = float(input("Enter product price: "))
                 quantity = int(input("Enter product quantity: "))
+                
+                start_time = time.time()  # Start the timer just before the actual operation
                 add_product_with_heap(product_id, name, category, price, quantity)  # Add product
                 global avl_root
                 avl_root = avl_tree.insert(avl_root, price, inventory[product_id])  # Add to AVL tree
+                end_time = time.time()  # End the timer
+                print("Product added successfully!")
+                print(f"Time taken for Add product operation: {end_time - start_time:.6f} seconds")
             except ValueError:
                 print("Invalid input! Please enter valid data types.")
 
@@ -386,44 +390,66 @@ def run_inventory_management():
                 price = float(price_input) if price_input else None
                 quantity_input = input("Enter new product quantity (leave blank to skip): ")
                 quantity = int(quantity_input) if quantity_input else None
+                
+                start_time = time.time()  # Start the timer just before the actual operation
                 update_product_with_heap(product_id, name=name, category=category, price=price, quantity=quantity)  # Update product
+                end_time = time.time()  # End the timer
+                print("Product updated successfully!")
+                print(f"Time taken for Update product operation: {end_time - start_time:.6f} seconds")
             except ValueError:
                 print("Invalid input! Please enter valid data types.")
 
         elif choice == '3':  # Delete a product
             try:
                 product_id = int(input("Enter product ID to delete: "))
+                
+                start_time = time.time()  # Start the timer just before the actual operation
                 delete_product_with_heap(product_id)  # Delete product
+                end_time = time.time()  # End the timer
+                print("Product deleted successfully!")
+                print(f"Time taken for Delete product operation: {end_time - start_time:.6f} seconds")
             except ValueError:
                 print("Invalid input! Please enter a valid product ID.")
 
         elif choice == '4':  # Get the product with the lowest price
+            start_time = time.time()  # Start the timer just before the actual operation
             lowest_price_product = get_lowest_price_product()
+            end_time = time.time()  # End the timer
             if lowest_price_product:
                 print(f"Lowest priced product: {lowest_price_product['name']} at ${lowest_price_product['price']}")
             else:
                 print("No products available in the inventory.")
+            print(f"Time taken for Get lowest price operation: {end_time - start_time:.6f} seconds")
 
         elif choice == '5':  # Display all products
+            start_time = time.time()  # Start the timer just before the actual operation
             print("\n--- Current Inventory ---")
             if inventory:
                 for product_id, product in inventory.items():
                     print(f"ID: {product_id}, Name: {product['name']}, Category: {product['category']}, Price: {product['price']}, Quantity: {product['quantity']}")
             else:
                 print("Inventory is empty!")
+            end_time = time.time()  # End the timer
+            print(f"Time taken for Display products operation: {end_time - start_time:.6f} seconds")
 
         elif choice == '6':  # Query products by price range
             try:
                 low_price = float(input("Enter the lower bound of the price range: "))
                 high_price = float(input("Enter the upper bound of the price range: "))
+                
+                start_time = time.time()  # Start the timer just before the actual query operation
                 result = []
                 avl_tree.get_products_in_range(avl_root, low_price, high_price, result)  # Query AVL tree
+                end_time = time.time()  # End the timer
+                
                 if result:
                     print("\n--- Products in Price Range ---")
                     for product in result:
                         print(f"ID: {product['id']}, Name: {product['name']}, Price: {product['price']}")
                 else:
                     print("No products found in this price range.")
+                
+                print(f"Time taken for Query products by price range operation: {end_time - start_time:.6f} seconds")
             except ValueError:
                 print("Invalid input! Please enter valid price values.")
 
@@ -434,12 +460,15 @@ def run_inventory_management():
         else:
             print("Invalid choice! Please select a valid option.")
 
+
+
+
 if __name__ == "__main__":
     # Step 1: Initialize some small dummy products for basic setup (no timing)
     #initialize_dummy_products()
 
     # Step 2: Define input sizes for stress testing
-    input_sizes = [10000, 50000, 100000, 500000]
+    input_sizes = [10000, 50000]
 
     # Step 3: Initialize lists to store execution times and memory usages
     execution_times = []
