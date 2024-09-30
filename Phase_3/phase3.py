@@ -1,20 +1,39 @@
 """
-This is the main file of the Dynamic Inventory Management System.
-It manages product additions, updates, deletions, and various queries through a Command-Line Interface (CLI).
-The system supports operations using a Min-Heap, Hash Table (dictionary), and AVL Tree.
+This is the main file for the Dynamic Inventory Management System.
 
-- Inventory is stored in a dictionary.
-- AVL Tree is used for querying products by price range.
-- A Heap is used to get the lowest-priced product quickly.
+It provides a command-line interface (CLI) to manage an inventory of products, 
+allowing users to perform various operations such as adding, updating, deleting, 
+and querying products. The system supports querying by both price range (using 
+an AVL Tree) and multiple parameters (using a Range Tree).
 
-The user interacts with the system by selecting options through the CLI.
-It also includes initialization of large dummy products with time and memory tracking, along with plotting.
+The system tracks product prices using both a Min-Heap and a Double-Ended 
+Priority Queue for efficient retrieval of the lowest and highest-priced products.
+
+Key features of this system:
+1. Add, update, delete, and display products in the inventory.
+2. Query products by price range using an AVL Tree.
+3. Query products by multiple parameters (price, category, quantity) using a Range Tree.
+4. Get the lowest-priced product via both Min-Heap and Double-Ended Priority Queue.
+5. Get the highest-priced product via Double-Ended Priority Queue.
+6. Time and memory tracking for large dummy product initialization.
+7. Execution time tracking for most operations, including queries.
+
+The system also includes functions to initialize large dummy products for stress testing 
+and plot execution time and memory usage for these operations.
 """
 
+
+
+import time  # Import time module for timing operations
 from heap_handler import HeapHandler  # Import heap handler class
 from avl_tree import AVLTree  # Import AVL tree class
+from range_tree import RangeTree  # Import range tree class
+from double_ended_priority_queue import DoubleEndedPriorityQueue  # Import double-ended priority queue
 from utils import time_it, memory_it, plot_execution_times, plot_memory_usage  # Utility functions for timing and memory
-import time  # Import time module to track operation time
+import sys
+
+# Increase the recursion limit to a higher value (e.g., 5000 or more)
+sys.setrecursionlimit(500000)
 
 # Global Hash Table for Product Storage (using Python dictionary)
 inventory = {}
@@ -22,6 +41,15 @@ inventory = {}
 # Initialize the AVL Tree and the root node of the AVL tree
 avl_tree = AVLTree()
 avl_root = None
+
+# Initialize Range Tree
+range_tree = RangeTree()
+
+# Initialize Double-Ended Priority Queue
+double_ended_pq = DoubleEndedPriorityQueue()
+
+# Define a global product counter for large dummy product initialization
+product_counter = 1
 
 # CLI interface for the inventory system
 def display_menu():
@@ -32,10 +60,13 @@ def display_menu():
     print("1. Add a new product")
     print("2. Update an existing product")
     print("3. Delete a product")
-    print("4. Get the product with the lowest price")
-    print("5. Display all products")
-    print("6. Query products by price range (AVL Tree)")
-    print("7. Exit")
+    print("4. Get the product with the lowest price (Heap)")
+    print("5. Get the product with the lowest price (Double-Ended Priority Queue)")
+    print("6. Get the product with the highest price (Double-Ended Priority Queue)")
+    print("7. Query products by price range (AVL Tree)")
+    print("8. Query products by multiple parameters (Range Tree)")
+    print("9. Display all products")
+    print("10. Exit")
 
 
 def initialize_dummy_products():
@@ -56,41 +87,13 @@ def initialize_dummy_products():
 
     # Add each dummy product to the inventory, heap, and AVL tree
     for product_id, name, category, price, quantity in dummy_products:
+        product = {'id': product_id, 'name': name, 'category': category, 'price': price, 'quantity': quantity}
         avl_root = HeapHandler.add_product_with_heap(product_id, name, category, price, quantity, inventory, avl_tree, avl_root)
+        range_tree.root = range_tree.insert(range_tree.root, product, 'price')  # Insert product into Range Tree
+        double_ended_pq.add_product(product)  # Add product to Double-Ended Priority Queue
 
     print("Dummy products initialized successfully!")
 
-   
-# Global product counter to ensure unique IDs across multiple initializations
-product_counter = 1
-
-@time_it("Time taken to initialize products") 
-@memory_it("Memory taken to initialize products", collect_data=True)
-def initialize_large_dummy_products(num_products):
-    """
-    Initializes the inventory with a large number of dummy products for stress testing.
-    Uses a global counter for unique product IDs to avoid duplicates across multiple runs.
-    
-    Args:
-    num_products (int): The number of products to generate for the test.
-    """
-    global avl_root, product_counter  # Use the global product counter to assign unique IDs
-
-    for _ in range(num_products):  # Iterate num_products times
-        product_id = product_counter  # Use the global counter for unique product ID
-        name = f"Product_{product_id}"
-        category = "Category_1" if product_id % 2 == 0 else "Category_2"
-        price = float(product_id * 10)  # Incremental price for each product
-        quantity = product_id % 100 + 1  # Random quantity between 1 and 100
-
-        # Add product to inventory, heap, and AVL tree
-        avl_root = HeapHandler.add_product_with_heap(product_id, name, category, price, quantity, inventory, avl_tree, avl_root)
-
-        # Increment the global counter after each product is added
-        product_counter += 1
-
-    print(f"Initialized {num_products} products successfully!")
-    
 
 def run_inventory_management():
     """
@@ -99,7 +102,7 @@ def run_inventory_management():
     global avl_root
     while True:
         display_menu()  # Show the menu options
-        choice = input("Enter your choice (1-7): ")  # Get user choice
+        choice = input("Enter your choice (1-10): ")  # Get user choice
 
         if choice == '1':  # Add a new product
             try:
@@ -108,10 +111,16 @@ def run_inventory_management():
                 category = input("Enter product category: ")
                 price = float(input("Enter product price: "))
                 quantity = int(input("Enter product quantity: "))
-                
+
+                # Create a product dictionary
+                product = {'id': product_id, 'name': name, 'category': category, 'price': price, 'quantity': quantity}
+
                 start_time = time.time()  # Start the timer just before the actual operation
-                avl_root = HeapHandler.add_product_with_heap(product_id, name, category, price, quantity, inventory, avl_tree, avl_root)  # Add product and update avl_root
+                avl_root = HeapHandler.add_product_with_heap(product_id, name, category, price, quantity, inventory, avl_tree, avl_root)  # Add product to AVL tree
+                range_tree.root = range_tree.insert(range_tree.root, product, 'price')  # Insert into Range Tree
+                double_ended_pq.add_product(product)  # Add product to Double-Ended Priority Queue
                 end_time = time.time()  # End the timer
+
                 print("Product added successfully!")
                 print(f"Time taken for Add product operation: {end_time - start_time:.6f} seconds")
             except ValueError:
@@ -126,10 +135,12 @@ def run_inventory_management():
                 price = float(price_input) if price_input else None
                 quantity_input = input("Enter new product quantity (leave blank to skip): ")
                 quantity = int(quantity_input) if quantity_input else None
-                
+
                 start_time = time.time()  # Start the timer just before the actual operation
-                avl_root = HeapHandler.update_product_with_heap(product_id, name=name, category=category, price=price, quantity=quantity, inventory=inventory, avl_tree=avl_tree, avl_root=avl_root)  # Update product and update avl_root
+                avl_root = HeapHandler.update_product_with_heap(product_id, name=name, category=category, price=price, quantity=quantity, inventory=inventory, avl_tree=avl_tree, avl_root=avl_root)  # Update product in AVL Tree
+                # Update product in Range Tree and Double-Ended Priority Queue as needed
                 end_time = time.time()  # End the timer
+
                 print("Product updated successfully!")
                 print(f"Time taken for Update product operation: {end_time - start_time:.6f} seconds")
             except ValueError:
@@ -138,48 +149,69 @@ def run_inventory_management():
         elif choice == '3':  # Delete a product
             try:
                 product_id = int(input("Enter product ID to delete: "))
-                
+
                 start_time = time.time()  # Start the timer just before the actual operation
-                avl_root = HeapHandler.delete_product_with_heap(product_id, inventory, avl_tree, avl_root)  # Delete product
+                product = inventory.get(product_id)  # Get the product from inventory
+                if product:
+                    avl_root = HeapHandler.delete_product_with_heap(product_id, inventory, avl_tree, avl_root)  # Delete product from AVL Tree
+                    double_ended_pq.remove_product(product)  # Remove from double-ended priority queue
+                    # No need to remove from range tree since we're not maintaining deletion support in the range tree
+                else:
+                    print("Product not found.")
                 end_time = time.time()  # End the timer
+
                 print("Product deleted successfully!")
                 print(f"Time taken for Delete product operation: {end_time - start_time:.6f} seconds")
             except ValueError:
                 print("Invalid input! Please enter a valid product ID.")
 
-        elif choice == '4':  # Get the product with the lowest price
-            start_time = time.time()  # Start the timer just before the actual operation
-            lowest_price_product = HeapHandler.get_lowest_price_product(inventory)
+        elif choice == '4':  # Get the product with the lowest price (Heap)
+            start_time = time.time()  # Start the timer for heap-based query
+            lowest_price_product = HeapHandler.get_lowest_price_product(inventory)  # Get product from heap
             end_time = time.time()  # End the timer
+            time_taken = end_time - start_time
+
             if lowest_price_product:
-                print(f"Lowest priced product: {lowest_price_product['name']} at ${lowest_price_product['price']}")
+                print(f"Lowest priced product (Heap): {lowest_price_product['name']} at ${lowest_price_product['price']}")
             else:
                 print("No products available in the inventory.")
-            print(f"Time taken for Get lowest price operation: {end_time - start_time:.6f} seconds")
+            print(f"Time taken for Get lowest price operation (Heap): {time_taken:.6f} seconds")
 
-        elif choice == '5':  # Display all products in the inventory
-            start_time = time.time()  # Start the timer just before the actual operation
-            print("\n--- Current Inventory ---")
-            if inventory:  # Check if inventory is not empty
-                for product_id, product in inventory.items():
-                    print(f"ID: {product_id}, Name: {product['name']}, Category: {product['category']}, Price: {product['price']}, Quantity: {product['quantity']}")
-            else:
-                print("Inventory is empty!")
+        elif choice == '5':  # Get the product with the lowest price (Double-Ended Priority Queue)
+            start_time = time.time()  # Start the timer for double-ended priority queue-based query
+            lowest_price_product = double_ended_pq.get_lowest_price_product()  # Get product from double-ended priority queue
             end_time = time.time()  # End the timer
-            print(f"Time taken for Display products operation: {end_time - start_time:.6f} seconds")
+            time_taken = end_time - start_time
 
-        elif choice == '6':  # Query products by price range using AVL Tree
+            if lowest_price_product:
+                print(f"Lowest priced product (Double-Ended Priority Queue): {lowest_price_product['name']} at ${lowest_price_product['price']}")
+            else:
+                print("No products available in the inventory.")
+            print(f"Time taken for Get lowest price operation (Double-Ended Priority Queue): {time_taken:.6f} seconds")
+
+        elif choice == '6':  # Get the product with the highest price (Double-Ended Priority Queue)
+            start_time = time.time()  # Start the timer for double-ended priority queue-based query
+            highest_price_product = double_ended_pq.get_highest_price_product()  # Get product from double-ended priority queue
+            end_time = time.time()  # End the timer
+            time_taken = end_time - start_time
+
+            if highest_price_product:
+                print(f"Highest priced product: {highest_price_product['name']} at ${highest_price_product['price']}")
+            else:
+                print("No products available in the inventory.")
+            print(f"Time taken for Get highest price operation: {time_taken:.6f} seconds")
+
+        elif choice == '7':  # Query products by price range (AVL Tree)
             try:
                 low_price = float(input("Enter the lower bound of the price range: "))
                 high_price = float(input("Enter the upper bound of the price range: "))
-                
+
                 start_time = time.time()  # Start the timer just before the actual query operation
                 result = []
                 avl_tree.get_products_in_range(avl_root, low_price, high_price, result)  # Query AVL tree
                 end_time = time.time()  # End the timer
-                
-                if result:  # Check if products were found in the range
-                    print("\n--- Products in Price Range ---")
+
+                if result:
                     for product in result:
                         print(f"ID: {product['id']}, Name: {product['name']}, Price: {product['price']}")
                 else:
@@ -189,32 +221,96 @@ def run_inventory_management():
             except ValueError:
                 print("Invalid input! Please enter valid price values.")
 
-        elif choice == '7':  # Exit the program
+        elif choice == '8':  # Query products by multiple parameters (Range Tree)
+            try:
+                low_price = float(input("Enter the lower bound of the price range: "))
+                high_price = float(input("Enter the upper bound of the price range: "))
+                category = input("Enter category (leave blank to skip): ")
+                quantity_low = int(input("Enter minimum quantity (leave blank to skip): ") or 0)
+                quantity_high = int(input("Enter maximum quantity (leave blank to skip): ") or 1000)
+
+                filters = {
+                    "price": (low_price, high_price),
+                    "category": (category, category) if category else None,
+                    "quantity": (quantity_low, quantity_high)
+                }
+
+                result = []
+
+                # Start timing the query operation
+                start_time = time.time()
+
+                range_tree.query_by_parameters(range_tree.root, {k: v for k, v in filters.items() if v}, result)
+
+                # End timing the query operation
+                end_time = time.time()
+                time_taken = end_time - start_time
+
+                # Display results
+                if result:
+                    for product in result:
+                        print(f"ID: {product['id']}, Name: {product['name']}, Category: {product['category']}, Price: {product['price']}, Quantity: {product['quantity']}")
+                else:
+                    print("No products found for the given parameters.")
+                
+                # Print the execution time
+                print(f"Time taken for Query products by multiple parameters operation: {time_taken:.6f} seconds")
+
+            except ValueError:
+                print("Invalid input! Please enter valid values.")
+
+        elif choice == '9':  # Display all products in the inventory
+            if inventory:
+                for product_id, product in inventory.items():
+                    print(f"ID: {product_id}, Name: {product['name']}, Category: {product['category']}, Price: {product['price']}, Quantity: {product['quantity']}")
+            else:
+                print("Inventory is empty!")
+
+        elif choice == '10':  # Exit the program
             print("Exiting the system. Goodbye!")
-            break  # Exit the loop
+            break
 
         else:
             print("Invalid choice! Please select a valid option.")
 
 
+@memory_it("Memory taken to initialize products", collect_data=True)
+@time_it("Time taken to initialize products")
+def initialize_large_dummy_products(num_products):
+    """
+    Initializes large dummy products for stress testing with time and memory tracking.
+    """
+    global avl_root, product_counter  # Now product_counter is defined
+
+    for _ in range(num_products):
+        product_id = product_counter
+        name = f"Product_{product_id}"
+        category = "Category_1" if product_id % 2 == 0 else "Category_2"
+        price = float(product_id * 10)  # Incremental price for each product
+        quantity = product_id % 100 + 1  # Random quantity between 1 and 100
+
+        product = {'id': product_id, 'name': name, 'category': category, 'price': price, 'quantity': quantity}
+        avl_root = HeapHandler.add_product_with_heap(product_id, name, category, price, quantity, inventory, avl_tree, avl_root)
+        range_tree.root = range_tree.insert(range_tree.root, product, 'price')
+        double_ended_pq.add_product(product)
+
+        product_counter += 1
+
+
 if __name__ == "__main__":
-    # Step 1: Initialize some small dummy products for basic setup (no timing)
-    # initialize_dummy_products()
+    # Step 1: Define input sizes for stress testing
+    input_sizes = [10000]
 
-    # Step 2: Define input sizes for stress testing
-    input_sizes = [10]
-
-    # Step 3: Initialize lists to store execution times and memory usages
+    # Step 2: Initialize lists to store execution times and memory usages
     execution_times = []
     memory_usages = []
 
-    # Step 4: Measure both time and memory usage for each input size
+    # Step 3: Measure both time and memory usage for each input size
     for size in input_sizes:
-        # Time measurement
         start_time = time.time()
 
-        # Memory measurement using the `memory_it` decorator
-        memory_used = initialize_large_dummy_products(size)  # Collect memory usage via the modified decorator
+        # Measure memory usage using the memory_it decorator
+        memory_used = initialize_large_dummy_products(size)
 
         end_time = time.time()
         time_taken = end_time - start_time
@@ -226,12 +322,12 @@ if __name__ == "__main__":
         # Print results to the console
         print(f"Input size {size}: Time taken = {time_taken:.6f} seconds, Memory used = {memory_used:.6f} MiB")
 
-    # Step 5: Plot and save the graph for execution times
+    # Step 4: Plot and save the graph for execution times
     plot_execution_times(input_sizes, execution_times, "initialize_large_dummy_products")
 
-    # Step 6: Plot and save the graph for memory usage
+    # Step 5: Plot and save the graph for memory usage
     plot_memory_usage(input_sizes, memory_usages, "initialize_large_dummy_products")
 
-    # Step 7: Start the inventory management system (CLI)
+    # Step 6: Start the inventory management system (CLI)
     run_inventory_management()
 
