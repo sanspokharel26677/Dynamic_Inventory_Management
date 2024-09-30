@@ -76,4 +76,3 @@ class RangeTree:
 # filters = {"price": (100, 500), "quantity": (1, 50)}
 # result = []
 # range_tree.query_by_parameters(root, filters, result)
-
