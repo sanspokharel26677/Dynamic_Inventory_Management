@@ -297,7 +297,7 @@ def initialize_large_dummy_products(num_products):
 
 if __name__ == "__main__":
     # Step 1: Define input sizes for stress testing
-    input_sizes = [100] # this also takes comma separated values like [10,100,1000]
+    input_sizes = [10, 100,1000] # this also takes comma separated values like [10,100,1000]
 
     # Step 2: Initialize lists to store execution times and memory usages
     execution_times = []
