@@ -22,8 +22,6 @@ The system also includes functions to initialize large dummy products for stress
 and plot execution time and memory usage for these operations.
 """
 
-
-
 import time  # Import time module for timing operations
 from heap_handler import HeapHandler  # Import heap handler class
 from avl_tree import AVLTree  # Import AVL tree class
@@ -32,7 +30,7 @@ from double_ended_priority_queue import DoubleEndedPriorityQueue  # Import doubl
 from utils import time_it, memory_it, plot_execution_times, plot_memory_usage  # Utility functions for timing and memory
 import sys
 
-# Increase the recursion limit to a higher value (e.g., 5000 or more)
+# Increase the recursion limit to handle deep recursive calls when initializing large data
 sys.setrecursionlimit(500000)
 
 # Global Hash Table for Product Storage (using Python dictionary)
@@ -207,8 +205,7 @@ def run_inventory_management():
                 high_price = float(input("Enter the upper bound of the price range: "))
 
                 start_time = time.time()  # Start the timer just before the actual query operation
-                result = []
-                avl_tree.get_products_in_range(avl_root, low_price, high_price, result)  # Query AVL tree
+                result = avl_tree.get_products_in_range(avl_root, low_price, high_price)  # Query AVL tree using avl_root
                 end_time = time.time()  # End the timer
 
                 if result:
@@ -299,7 +296,7 @@ def initialize_large_dummy_products(num_products):
 
 if __name__ == "__main__":
     # Step 1: Define input sizes for stress testing
-    input_sizes = [10000]
+    input_sizes = [100]
 
     # Step 2: Initialize lists to store execution times and memory usages
     execution_times = []

@@ -1,7 +1,4 @@
-"""
-This file contains the AVL Tree implementation used in the Dynamic Inventory Management System.
-The AVL Tree is a balanced binary search tree that allows for efficient querying of products by price range.
-"""
+from functools import lru_cache  # Added lru_cache from functools
 
 class AVLNode:
     """
@@ -20,20 +17,53 @@ class AVLTree:
     This class implements the AVL tree, a self-balancing binary search tree that stores products by price.
     It supports efficient insertion, deletion, and querying by price range.
     """
+    
+    @lru_cache(maxsize=256)  # Caches up to 256 unique price range queries
+    def get_products_in_range(self, root, low_price, high_price):
+        """
+        Retrieves all products from the AVL tree that fall within a given price range.
+        Uses caching to store results of previous queries.
+        """
+        return self._get_products_in_range_recursive(root, low_price, high_price)
+
+    def _get_products_in_range_recursive(self, node, low, high):
+        """
+        Helper recursive method to retrieve products within a price range.
+        """
+        if not node:
+            return []
+
+        result = []
+
+        # If node's price is within the range, include it
+        if low <= node.price <= high:
+            result.append(node.product)
+
+        # Traverse left subtree if there's a chance of finding lower prices
+        if low < node.price:
+            result.extend(self._get_products_in_range_recursive(node.left, low, high))
+
+        # Traverse right subtree if there's a chance of finding higher prices
+        if high > node.price:
+            result.extend(self._get_products_in_range_recursive(node.right, low, high))
+
+        return result
 
     def insert(self, root, price, product):
         """
         Inserts a product into the AVL tree and balances the tree if necessary.
         """
         if not root:  # If the root is None, create a new node
-            #print(f"Inserting product with price {price} into AVL Tree")  # Debugging: Track insertion
             return AVLNode(price, product)
         
         # Insert based on price
         if price < root.price:
             root.left = self.insert(root.left, price, product)
-        else:
+        elif price > root.price:
             root.right = self.insert(root.right, price, product)
+        else:
+            # If the price is equal, you might decide how to handle duplicates
+            return root
 
         # Update the height of the node
         root.height = 1 + max(self.get_height(root.left), self.get_height(root.right))
@@ -42,40 +72,22 @@ class AVLTree:
         balance = self.get_balance(root)
 
         # Perform rotations if the tree is unbalanced
-        if balance > 1 and price < root.left.price:  # Left-Left case
+        # Left Left Case
+        if balance > 1 and price < root.left.price:
             return self.rotate_right(root)
-        if balance < -1 and price > root.right.price:  # Right-Right case
+        # Right Right Case
+        if balance < -1 and price > root.right.price:
             return self.rotate_left(root)
-        if balance > 1 and price > root.left.price:  # Left-Right case
+        # Left Right Case
+        if balance > 1 and price > root.left.price:
             root.left = self.rotate_left(root.left)
             return self.rotate_right(root)
-        if balance < -1 and price < root.right.price:  # Right-Left case
+        # Right Left Case
+        if balance < -1 and price < root.right.price:
             root.right = self.rotate_right(root.right)
             return self.rotate_left(root)
 
         return root  # Return the root of the balanced subtree
-
-    def get_products_in_range(self, root, low, high, result):
-        """
-        Retrieves all products from the AVL tree that fall within a given price range.
-        """
-        if not root:  # If the subtree is empty, return
-            return
-
-        # Debugging to track the traversal of the AVL tree
-        #print(f"Visiting node with price: {root.price}")
-
-        # If the current node's price is within the range, add it to the result
-        if low <= root.price <= high:
-            print(f"Product with price {root.price} is in range [{low}, {high}]")  # Debugging: Price is in range
-            result.append(root.product)
-
-        # Recur for the left and right subtrees based on the price range
-        if low < root.price:
-            self.get_products_in_range(root.left, low, high, result)
-
-        if high > root.price:
-            self.get_products_in_range(root.right, low, high, result)
 
     # Rotations to maintain AVL balance
     def rotate_left(self, z):
@@ -86,8 +98,11 @@ class AVLTree:
         T2 = y.left  # T2 becomes the right subtree of z
         y.left = z  # z becomes the left child of y
         z.right = T2  # T2 becomes the right child of z
-        z.height = 1 + max(self.get_height(z.left), self.get_height(z.right))  # Update height of z
-        y.height = 1 + max(self.get_height(y.left), self.get_height(y.right))  # Update height of y
+
+        # Update heights
+        z.height = 1 + max(self.get_height(z.left), self.get_height(z.right))
+        y.height = 1 + max(self.get_height(y.left), self.get_height(y.right))
+
         return y  # Return the new root
 
     def rotate_right(self, z):
@@ -98,8 +113,11 @@ class AVLTree:
         T3 = y.right  # T3 becomes the left subtree of z
         y.right = z  # z becomes the right child of y
         z.left = T3  # T3 becomes the left child of z
-        z.height = 1 + max(self.get_height(z.left), self.get_height(z.right))  # Update height of z
-        y.height = 1 + max(self.get_height(y.left), self.get_height(y.right))  # Update height of y
+
+        # Update heights
+        z.height = 1 + max(self.get_height(z.left), self.get_height(z.right))
+        y.height = 1 + max(self.get_height(y.left), self.get_height(y.right))
+
         return y  # Return the new root
 
     def get_height(self, node):
